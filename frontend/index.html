@@ -914,31 +914,14 @@
                     </svg>
                     Analytics
                 </div>
-                <div class="sb-section">Settings</div>
-                <div class="sb-link">
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor"
-                        stroke-width="1.5">
-                        <circle cx="6.5" cy="6.5" r="1.8" />
-                        <path d="M6.5 1v1.5M6.5 10v1.5M1 6.5h1.5M10 6.5h1.5" />
-                    </svg>
-                    API Config
-                </div>
-                <div class="sb-link">
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor"
-                        stroke-width="1.5">
-                        <circle cx="6.5" cy="4.5" r="2.2" />
-                        <path d="M1 12c0-2.5 2.5-4.5 5.5-4.5S12 9.5 12 12" />
-                    </svg>
-                    Account
-                </div>
             </div>
 
             <div class="sb-footer">
                 <div class="sb-user">
-                    <div class="sb-avatar" id="sbAvatar">—</div>
+                    <div class="sb-avatar">PS</div>
                     <div>
-                        <div class="sb-user-email" id="sbEmail">Not signed in</div>
-                        <div class="sb-user-role" id="sbRole">guest</div>
+                        <div class="sb-user-email">System Mode</div>
+                        <div class="sb-user-role">Autonomous</div>
                     </div>
                 </div>
             </div>
@@ -1069,63 +1052,10 @@
                         </div>
                     </div>
 
-                    <!-- API Key -->
-                    <div class="panel">
-                        <div class="ph">
-                            <div class="ph-title"><span class="ph-icon">🔑</span>API Key</div>
-                        </div>
-                        <div class="pb">
-                            <div class="field">
-                                <div class="flabel">Access token</div>
-                                <div class="iwrap">
-                                    <span class="ipfx">⬡</span>
-                                    <input type="text" id="apiKey" placeholder="sk-••••••••••••">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
                 <!-- RIGHT COL -->
                 <div class="col">
-
-                    <!-- Auth -->
-                    <div class="panel">
-                        <div class="ph">
-                            <div class="ph-title"><span class="ph-icon">🔐</span>Authentication</div>
-                        </div>
-                        <div class="pb">
-                            <div class="field">
-                                <div class="flabel">Email</div>
-                                <div class="iwrap">
-                                    <span class="ipfx">@</span>
-                                    <input type="email" id="email" placeholder="you@example.com">
-                                </div>
-                            </div>
-                            <div class="field">
-                                <div class="flabel">Password</div>
-                                <div class="iwrap">
-                                    <span class="ipfx">●</span>
-                                    <input type="password" id="password" placeholder="••••••••">
-                                </div>
-                            </div>
-                            <div class="btn-row">
-                                <button class="btn pri" onclick="login()" style="flex:1;justify-content:center;">Sign
-                                    in</button>
-                                <button class="btn" onclick="signup()" style="flex:1;justify-content:center;">Create
-                                    account</button>
-                                <button class="btn ghost" onclick="logout()" title="Sign out" style="padding:0 9px;">
-                                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor"
-                                        stroke-width="1.5">
-                                        <path d="M8.5 6.5H1M8.5 6.5l-2-2M8.5 6.5l-2 2" />
-                                        <path d="M5 1.5h5.5a1 1 0 011 1v8a1 1 0 01-1 1H5" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="authmsg" id="authMsg">Not authenticated</div>
-                        </div>
-                    </div>
 
                     <!-- Output -->
                     <div class="panel">
@@ -1153,164 +1083,7 @@
 
     <canvas id="canvas"></canvas>
 
-    <script>
-        const BASE_URL = window.location.origin;
-
-        /* Clock */
-        !function tick() {
-            document.getElementById('clock').textContent =
-                new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            setTimeout(tick, 1000);
-        }();
-
-        /* Stats */
-        function setStats(t, o, a) {
-            document.getElementById('total').textContent = t;
-            document.getElementById('occupied').textContent = o;
-            document.getElementById('available').textContent = a;
-            const po = t > 0 ? Math.round(o / t * 100) : 0;
-            const pa = t > 0 ? Math.round(a / t * 100) : 0;
-            document.getElementById('occFill').style.width = po + '%';
-            document.getElementById('avFill').style.width = pa + '%';
-            document.getElementById('occNote').textContent = po + '% utilization';
-            document.getElementById('avNote').textContent = pa + '% free';
-            document.getElementById('lastScan').textContent =
-                'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        }
-
-        /* Status */
-        function setStatus(msg, on) {
-            document.getElementById('statusTxt').textContent = msg;
-            document.getElementById('statusEl').classList.toggle('on', !!on);
-        }
-
-        /* Auth */
-        function setAuthMsg(m, t) {
-            const el = document.getElementById('authMsg');
-            el.textContent = m; el.className = 'authmsg' + (t ? ' ' + t : '');
-        }
-
-        function login() {
-            setAuthMsg('Testing mode: Auth disabled', 'ok');
-        }
-
-        function signup() {
-            setAuthMsg('Testing mode: Auth disabled', 'ok');
-        }
-
-        function logout() {
-            setAuthMsg('Signed out.', '');
-        }
-
-        /* Camera */
-        let stream = null;
-
-        async function startCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                const v = document.getElementById('video');
-                v.srcObject = stream; v.style.display = 'block';
-                document.getElementById('vIdle').classList.add('hidden');
-                document.getElementById('recBadge').style.display = 'inline';
-                document.getElementById('resBadge').style.display = 'inline';
-                setStatus('Camera connected', true);
-            } catch (e) { setStatus('Camera error: ' + e.message, false); }
-        }
-
-        function stopCamera() {
-            stopRealtime();
-            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-            const v = document.getElementById('video');
-            v.srcObject = null; v.style.display = 'none';
-            document.getElementById('vIdle').classList.remove('hidden');
-            document.getElementById('recBadge').style.display = 'none';
-            document.getElementById('resBadge').style.display = 'none';
-            setStatus('Idle', false);
-        }
-
-        function startLive() {
-            const f = document.getElementById('liveFeed');
-            f.src = BASE_URL + '/live?' + Date.now(); f.style.display = 'block';
-            document.getElementById('vIdle').classList.add('hidden');
-            setStatus('Server stream active', true);
-        }
-
-        let socket = null, isSending = false;
-
-        function startRealtime() {
-            if (socket && socket.readyState === WebSocket.OPEN) return;
-            setStatus('Realtime detection running', true);
-
-            const WS_URL = BASE_URL.replace('http', 'ws') + '/ws';
-            socket = new WebSocket(WS_URL);
-
-            socket.onmessage = (e) => {
-                try {
-                    const d = JSON.parse(e.data);
-                    if (d.total_slots !== undefined) setStats(d.total_slots, d.occupied, d.available);
-                    else if (d.total !== undefined) setStats(d.total, d.occupied, d.available);
-                    if (d.image) showOut('data:image/jpeg;base64,' + d.image);
-                } catch(err) {}
-                isSending = false;
-            };
-
-            const loop = () => {
-                const v = document.getElementById('video');
-                if (!socket || socket.readyState !== WebSocket.OPEN) return;
-                if (isSending || !v.videoWidth) {
-                    requestAnimationFrame(loop);
-                    return;
-                }
-                isSending = true;
-                const c = document.getElementById('canvas');
-                c.width = v.videoWidth; c.height = v.videoHeight;
-                c.getContext('2d').drawImage(v, 0, 0);
-                c.toBlob(blob => {
-                    if (blob && socket.readyState === WebSocket.OPEN) socket.send(blob);
-                    requestAnimationFrame(loop);
-                }, 'image/jpeg', 0.6);
-            };
-            socket.onopen = loop;
-            socket.onclose = () => { setStatus('Detection stopped', false); isSending = false; };
-        }
-
-        function stopRealtime() {
-            if (socket) socket.close();
-            socket = null;
-        }
-
-        function onFile(el) {
-            const f = el.files[0]; if (!f) return;
-            const n = document.getElementById('fname');
-            n.textContent = '📎 ' + f.name; n.style.display = 'block';
-        }
-
-        function analyze() {
-            const f = document.getElementById('fileInput').files[0];
-            if (!f) { setStatus('Select an image first', false); return; }
-            setStatus('Analyzing…', true);
-            const fd = new FormData(); fd.append('image', f);
-            fetch('/predict', { method: 'POST', body: fd })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.total !== undefined) setStats(d.total, d.occupied, d.available);
-                    if (d.image) showOut('data:image/jpeg;base64,' + d.image);
-                    setStatus('Analysis complete', false);
-                }).catch(() => setStatus('Analysis failed', false));
-        }
-
-        function showOut(src) {
-            document.getElementById('outImg').src = src;
-            document.getElementById('outImg').style.display = 'block';
-            document.getElementById('outEmpty').style.display = 'none';
-        }
-
-        function clearOut() {
-            document.getElementById('outImg').src = '';
-            document.getElementById('outImg').style.display = 'none';
-            document.getElementById('outEmpty').style.display = 'block';
-        }
-    </script>
+    <script src="dashboard.js"></script>
 </body>
 
 </html>
