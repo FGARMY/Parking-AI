@@ -1,67 +1,134 @@
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0f0f0f;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0f1115;
+    color: #fff;
+}
+
+.app {
+    display: flex;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: #16181d;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sidebar h2 {
+    margin-bottom: 20px;
+}
+
+.sidebar button {
+    padding: 10px;
+    background: #ff4d4d;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+}
+
+.api-box input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    background: #222;
     color: white;
 }
 
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
+/* MAIN */
+.main {
+    flex: 1;
+    padding: 30px;
 }
 
-h1 {
+/* AUTH */
+.auth-card {
+    max-width: 400px;
+    margin: auto;
+    background: #1c1f26;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.auth-card input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: none;
+    background: #2a2d35;
+    color: white;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.auth-buttons button {
+    flex: 1;
+}
+
+/* STATS */
+.stats-grid {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    flex: 1;
+    background: #1c1f26;
+    padding: 20px;
+    border-radius: 12px;
     text-align: center;
 }
 
+.stat-card.red {
+    background: #2a1c1c;
+}
+
+.stat-card.green {
+    background: #1c2a1f;
+}
+
+/* CARD */
 .card {
-    background: #1a1a1a;
+    background: #1c1f26;
     padding: 20px;
-    margin: 15px 0;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+video {
+    width: 100%;
     border-radius: 10px;
 }
 
-input {
-    width: 100%;
-    padding: 10px;
+canvas {
+    display: none;
+}
+
+.controls {
     margin-top: 10px;
-    background: #222;
-    border: none;
-    color: white;
+    display: flex;
+    gap: 10px;
 }
 
 button {
-    margin-top: 10px;
-    padding: 10px;
-    width: 100%;
-    background: #00c896;
+    padding: 10px 15px;
+    border-radius: 8px;
     border: none;
+    background: #4c7eff;
+    color: white;
     cursor: pointer;
-    font-weight: bold;
-}
-
-.stats {
-    display: flex;
-    justify-content: space-between;
-    margin: 20px 0;
-}
-
-.stat {
-    flex: 1;
-    margin: 5px;
-    background: #1a1a1a;
-    padding: 20px;
-    text-align: center;
-    border-radius: 10px;
-}
-
-.stat.red {
-    border: 2px solid red;
-}
-
-.stat.green {
-    border: 2px solid #00c896;
 }
 
 img {

@@ -19,7 +19,9 @@ app = FastAPI()
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+    "https://parking-ai-zwch.vercel.app"
+],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,6 +49,18 @@ def signup(email: str, password: str, db: Session = Depends(get_db)):
 
     return {"api_key": user.api_key}
 
+# 🔐 LOGIN
+@app.post("/login")
+def login(email: str, password: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.email == email,
+        User.password == password
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    return {"api_key": user.api_key}
 
 # ❤️ Health check
 @app.get("/health")

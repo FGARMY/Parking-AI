@@ -12,7 +12,21 @@
     <div class="container">
 
         <h1>🚗 Parking AI Dashboard</h1>
+        <div id="dashboard" style="display:none;">
+            <!-- ALL YOUR EXISTING DASHBOARD CONTENT HERE -->
+        </div>
+        <div id="authContainer" class="card">
+            <h3>🔐 Login / Signup</h3>
 
+            <input type="email" id="email" placeholder="Email"><br><br>
+            <input type="password" id="password" placeholder="Password"><br><br>
+
+            <button onclick="login()">Login</button>
+            <button onclick="signup()">Signup</button>
+            <button onclick="logout()">Logout</button>
+
+            <p id="authStatus" style="margin-top:10px; color:gray;"></p>
+        </div>
         <!-- LIVE CAMERA SECTION -->
         <div class="card">
             <h3>Live Camera</h3>

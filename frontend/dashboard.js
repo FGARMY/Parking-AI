@@ -1,11 +1,18 @@
-const API_URL = "http://127.0.0.1:8000/predict";
+const API_URL = "https://parking-ai-hhjo.onrender.com/predict";
+const BASE_URL = "https://parking-ai-hhjo.onrender.com";
 
 let videoStream = null;
-let detectionInterval = null;
+let socket = null;
+let isSending = false;
 
+// 🔄 INIT
 window.onload = () => {
-    document.getElementById("apiKey").value =
-        localStorage.getItem("apiKey") || "";
+    const savedKey = localStorage.getItem("apiKey");
+
+    if (savedKey) {
+        document.getElementById("apiKey").value = savedKey;
+        showDashboard();
+    }
 };
 
 // 📤 IMAGE ANALYSIS
@@ -33,36 +40,20 @@ async function analyze() {
             body: formData
         });
 
-        if (!res.ok) throw new Error("Invalid API key or server error");
+        if (!res.ok) throw new Error();
 
         const data = await res.json();
         updateUI(data);
 
         setStatus("Done");
 
-    } catch (err) {
-        console.error(err);
+    } catch {
         setStatus("Error");
-        alert("Error connecting to backend");
+        alert("Backend error");
     }
 }
 
-// 📹 SERVER LIVE
-function startLive() {
-    const apiKey = document.getElementById("apiKey").value;
-
-    if (!apiKey) {
-        alert("Enter API key first");
-        return;
-    }
-
-    setStatus("Starting server stream...");
-
-    document.getElementById("liveFeed").src =
-        `http://127.0.0.1:8000/live?api_key=${apiKey}`;
-}
-
-// 🎥 START BROWSER CAMERA
+// 🎥 CAMERA
 async function startCamera() {
     const video = document.getElementById("video");
 
@@ -74,88 +65,159 @@ async function startCamera() {
         video.srcObject = videoStream;
         setStatus("Camera Started");
 
-    } catch (err) {
+    } catch {
         setStatus("Camera denied");
-        alert("Camera access denied");
     }
 }
 
-// 🧠 SEND FRAME TO BACKEND
-async function captureAndSend() {
-    const apiKey = document.getElementById("apiKey").value;
-    if (!apiKey) return;
-
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-
-    if (!video.videoWidth) return; // avoid blank frames
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    ctx.drawImage(video, 0, 0);
-
-    return new Promise((resolve) => {
-        canvas.toBlob(async (blob) => {
-            const formData = new FormData();
-            formData.append("file", blob, "frame.jpg");
-
-            try {
-                const res = await fetch(API_URL, {
-                    method: "POST",
-                    headers: { "api_key": apiKey },
-                    body: formData
-                });
-
-                if (!res.ok) return;
-
-                const data = await res.json();
-                updateUI(data);
-
-            } catch (err) {
-                console.error("Detection error:", err);
-            }
-
-            resolve();
-        }, "image/jpeg", 0.7); // compressed for speed
-    });
-}
-
-// 🔁 START REAL-TIME DETECTION
-function startLiveDetection() {
-    if (detectionInterval) {
-        setStatus("Already running");
-        return;
-    }
-
-    setStatus("Detecting...");
-
-    detectionInterval = setInterval(captureAndSend, 800); // faster
-}
-
-// ⛔ STOP CAMERA + DETECTION
+// ⛔ STOP CAMERA
 function stopCamera() {
     if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
         videoStream = null;
     }
+    setStatus("Camera stopped");
+}
 
-    if (detectionInterval) {
-        clearInterval(detectionInterval);
-        detectionInterval = null;
+// 🚀 REALTIME (WebSocket)
+function startRealtime() {
+    const apiKey = document.getElementById("apiKey").value;
+
+    if (!apiKey) {
+        alert("Enter API key");
+        return;
     }
 
-    setStatus("Stopped");
+    if (socket && socket.readyState === 1) {
+        setStatus("Already running");
+        return;
+    }
+
+    const WS_URL = location.origin.replace("http", "ws") + "/ws";
+    socket = new WebSocket(WS_URL);
+
+    socket.onopen = () => {
+        setStatus("AI Running");
+        sendFrames();
+    };
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        updateUI(data);
+        isSending = false;
+    };
+
+    socket.onerror = () => setStatus("WebSocket error");
+    socket.onclose = () => setStatus("Stopped");
+}
+
+// 🔁 FRAME LOOP (optimized)
+function sendFrames() {
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    function loop() {
+        if (!socket || socket.readyState !== 1) return;
+
+        if (isSending || !video.videoWidth) {
+            requestAnimationFrame(loop);
+            return;
+        }
+
+        isSending = true;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob((blob) => {
+            if (blob) socket.send(blob);
+        }, "image/jpeg", 0.6);
+
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+}
+
+// ⛔ STOP REALTIME
+function stopRealtime() {
+    if (socket) {
+        socket.close();
+        socket = null;
+    }
+    isSending = false;
+    setStatus("AI stopped");
+}
+
+// 🔐 LOGIN
+async function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    try {
+        const res = await fetch(`${BASE_URL}/login?email=${email}&password=${password}`, {
+            method: "POST"
+        });
+
+        const data = await res.json();
+
+        if (data.api_key) {
+            localStorage.setItem("apiKey", data.api_key);
+            document.getElementById("apiKey").value = data.api_key;
+            showDashboard();
+            setAuthStatus("Login successful");
+        } else {
+            setAuthStatus("Invalid credentials");
+        }
+
+    } catch {
+        setAuthStatus("Login error");
+    }
+}
+
+// 🆕 SIGNUP
+async function signup() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    try {
+        const res = await fetch(`${BASE_URL}/signup?email=${email}&password=${password}`, {
+            method: "POST"
+        });
+
+        const data = await res.json();
+
+        if (data.api_key) {
+            localStorage.setItem("apiKey", data.api_key);
+            document.getElementById("apiKey").value = data.api_key;
+            showDashboard();
+            setAuthStatus("Account created");
+        } else {
+            setAuthStatus("Signup failed");
+        }
+
+    } catch {
+        setAuthStatus("Signup error");
+    }
+}
+
+// 🔄 DASHBOARD CONTROL
+function showDashboard() {
+    document.getElementById("authContainer").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+}
+
+function logout() {
+    localStorage.removeItem("apiKey");
+    location.reload();
 }
 
 // 🎯 UI HELPERS
 function updateUI(data) {
-    if (data.error) {
-        setStatus("Error");
-        alert(data.error);
-        return;
-    }
+    if (data.error) return;
 
     document.getElementById("total").innerText = data.total_slots;
     document.getElementById("occupied").innerText = data.occupied;
@@ -179,89 +241,6 @@ function setStatus(msg) {
     if (el) el.innerText = msg;
 }
 
-let socket;
-let isSending = false;
-
-function startRealtime() {
-    const apiKey = document.getElementById("apiKey").value;
-
-    if (!apiKey) {
-        alert("Enter API key");
-        return;
-    }
-
-    // 🔥 prevent multiple connections
-    if (socket && socket.readyState === 1) {
-        setStatus("Already connected");
-        return;
-    }
-
-    socket = new WebSocket("ws://127.0.0.1:8000/ws");
-
-    socket.onopen = () => {
-        setStatus("WebSocket Connected");
-        sendFrames();
-    };
-
-    socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        updateUI(data);
-
-        // 🔥 allow next frame only after response
-        isSending = false;
-    };
-
-    socket.onerror = () => {
-        setStatus("WebSocket Error");
-    };
-
-    socket.onclose = () => {
-        setStatus("Disconnected");
-    };
-}
-
-function sendFrames() {
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-
-    function loop() {
-        if (!socket || socket.readyState !== 1) return;
-
-        // 🔥 backpressure control
-        if (isSending) {
-            requestAnimationFrame(loop);
-            return;
-        }
-
-        if (!video.videoWidth) {
-            requestAnimationFrame(loop);
-            return;
-        }
-
-        isSending = true;
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-
-        ctx.drawImage(video, 0, 0);
-
-        canvas.toBlob((blob) => {
-            if (blob) socket.send(blob);
-        }, "image/jpeg", 0.6);
-
-        requestAnimationFrame(loop);
-    }
-
-    loop();
-}
-
-// 🔥 ADD THIS (important)
-function stopRealtime() {
-    if (socket) {
-        socket.close();
-        socket = null;
-    }
-    isSending = false;
-    setStatus("Stopped realtime");
+function setAuthStatus(msg) {
+    document.getElementById("authStatus").innerText = msg;
 }
