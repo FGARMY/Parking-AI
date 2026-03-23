@@ -1,4 +1,4 @@
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = "https://dalene-compulsory-tamica.ngrok-free.dev";
 const API_URL = BASE_URL + "/predict";
 const WS_URL = BASE_URL.replace("http", "ws") + "/ws";
 
