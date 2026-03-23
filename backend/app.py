@@ -1,66 +1,25 @@
-from fastapi import FastAPI, File, UploadFile, Depends, Header
+from fastapi import FastAPI, File, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from database import Base, engine
-from models import User
-from auth import get_db, generate_api_key, verify_api_key
+from fastapi.responses import StreamingResponse
 from model_loader import get_model
 from utils import process_image
-import shutil, cv2, base64, os
-from fastapi.responses import StreamingResponse
-from fastapi import WebSocket
-import numpy as np
 
-# Create DB
-Base.metadata.create_all(bind=engine)
+import shutil
+import cv2
+import base64
+import os
+import numpy as np
 
 app = FastAPI()
 
-# CORS
+# ✅ CORS (allow frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-    "https://parking-ai-zwch.vercel.app"
-],
+    allow_origins=["*"],  # change later for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 🔐 SIGNUP
-from fastapi import HTTPException
-
-@app.post("/signup")
-def signup(email: str, password: str, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == email).first()
-
-    if existing_user:
-        return {
-            "message": "User already exists",
-            "api_key": existing_user.api_key
-        }
-
-    api_key = generate_api_key()
-
-    user = User(email=email, password=password, api_key=api_key)
-    db.add(user)
-    db.commit()
-    db.refresh(user)   # 🔥 THIS WAS MISSING
-
-    return {"api_key": user.api_key}
-
-# 🔐 LOGIN
-@app.post("/login")
-def login(email: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(
-        User.email == email,
-        User.password == password
-    ).first()
-
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    return {"api_key": user.api_key}
 
 # ❤️ Health check
 @app.get("/health")
@@ -68,17 +27,10 @@ def health():
     return {"status": "ok"}
 
 
-# 🔐 SECURED PREDICT
+# 📤 IMAGE PREDICTION
 @app.post("/predict")
-async def predict(
-    file: UploadFile = File(...),
-    api_key: str = Header(...),
-    db: Session = Depends(get_db)
-):
+async def predict(file: UploadFile = File(...)):
     try:
-        # 🔐 Verify API key
-        verify_api_key(api_key, db)
-
         file_path = f"temp_{file.filename}"
 
         with open(file_path, "wb") as buffer:
@@ -100,8 +52,7 @@ async def predict(
             "total_slots": occupied + available,
             "occupied": occupied,
             "available": available,
-            "image": img_base64,
-            "detections": detections
+            "image": img_base64
         }
 
     except Exception as e:
@@ -114,7 +65,7 @@ def load_model():
     get_model()
 
 
-# 📹 LIVE STREAM GENERATOR
+# 📹 LOCAL CAMERA STREAM (optional)
 def generate_frames():
     cap = cv2.VideoCapture(0)
     model = get_model()
@@ -153,17 +104,15 @@ def generate_frames():
                b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
 
 
-# 🔐 LIVE STREAM ENDPOINT
 @app.get("/live")
-def live_stream(api_key: str, db: Session = Depends(get_db)):
-    verify_api_key(api_key, db)
-
+def live_stream():
     return StreamingResponse(
         generate_frames(),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
 
-#websocket
+
+# 🔁 WEBSOCKET REALTIME (PRODUCTION CORE)
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -174,7 +123,6 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_bytes()
 
-            # decode image
             nparr = np.frombuffer(data, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 

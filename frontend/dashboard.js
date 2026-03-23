@@ -116,7 +116,6 @@ async function analyze() {
     try {
         const res = await fetch(API_URL, {
             method: "POST",
-            headers: { "api_key": apiKey },
             body: formData
         });
 
@@ -215,7 +214,7 @@ function startRealtime() {
     }
 
     // Derive WS URL from BASE_URL
-    const WS_URL = BASE_URL.replace(/^http/, "ws") + "/ws";
+    const WS_URL = BASE_URL.replace("https", "wss") + "/ws";
     socket = new WebSocket(WS_URL);
 
     socket.onopen = () => {

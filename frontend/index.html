@@ -1154,6 +1154,8 @@
     <canvas id="canvas"></canvas>
 
     <script>
+        const BASE_URL = window.location.origin;
+
         /* Clock */
         !function tick() {
             document.getElementById('clock').textContent =
@@ -1189,31 +1191,19 @@
         }
 
         function login() {
-            const em = document.getElementById('email').value.trim();
-            if (!em) { setAuthMsg('Enter your email.', 'err'); return; }
-            setAuthMsg('Signing in…', '');
-            setTimeout(() => {
-                setAuthMsg('Signed in as ' + em, 'ok');
-                document.getElementById('sbEmail').textContent = em;
-                document.getElementById('sbAvatar').textContent = em[0].toUpperCase();
-                document.getElementById('sbRole').textContent = 'authenticated';
-            }, 600);
+            setAuthMsg('Testing mode: Auth disabled', 'ok');
         }
 
         function signup() {
-            setAuthMsg('Creating account…', '');
-            setTimeout(() => setAuthMsg('Check your email to verify.', 'ok'), 700);
+            setAuthMsg('Testing mode: Auth disabled', 'ok');
         }
 
         function logout() {
             setAuthMsg('Signed out.', '');
-            document.getElementById('sbEmail').textContent = 'Not signed in';
-            document.getElementById('sbAvatar').textContent = '—';
-            document.getElementById('sbRole').textContent = 'guest';
         }
 
         /* Camera */
-        let stream = null, rtInt = null;
+        let stream = null;
 
         async function startCamera() {
             try {
@@ -1240,37 +1230,53 @@
 
         function startLive() {
             const f = document.getElementById('liveFeed');
-            f.src = '/video_feed?' + Date.now(); f.style.display = 'block';
+            f.src = BASE_URL + '/live?' + Date.now(); f.style.display = 'block';
             document.getElementById('vIdle').classList.add('hidden');
             setStatus('Server stream active', true);
         }
 
+        let socket = null, isSending = false;
+
         function startRealtime() {
-            if (rtInt) return;
+            if (socket && socket.readyState === WebSocket.OPEN) return;
             setStatus('Realtime detection running', true);
-            rtInt = setInterval(() => {
+
+            const WS_URL = BASE_URL.replace('http', 'ws') + '/ws';
+            socket = new WebSocket(WS_URL);
+
+            socket.onmessage = (e) => {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d.total_slots !== undefined) setStats(d.total_slots, d.occupied, d.available);
+                    else if (d.total !== undefined) setStats(d.total, d.occupied, d.available);
+                    if (d.image) showOut('data:image/jpeg;base64,' + d.image);
+                } catch(err) {}
+                isSending = false;
+            };
+
+            const loop = () => {
                 const v = document.getElementById('video');
-                if (!v.srcObject) return;
+                if (!socket || socket.readyState !== WebSocket.OPEN) return;
+                if (isSending || !v.videoWidth) {
+                    requestAnimationFrame(loop);
+                    return;
+                }
+                isSending = true;
                 const c = document.getElementById('canvas');
                 c.width = v.videoWidth; c.height = v.videoHeight;
                 c.getContext('2d').drawImage(v, 0, 0);
-                c.toBlob(b => {
-                    if (!b) return;
-                    const fd = new FormData(); fd.append('image', b, 'f.jpg');
-                    fetch('/predict', { method: 'POST', body: fd })
-                        .then(r => r.json())
-                        .then(d => {
-                            if (d.total !== undefined) setStats(d.total, d.occupied, d.available);
-                            if (d.image) showOut('data:image/jpeg;base64,' + d.image);
-                        }).catch(() => { });
-                }, 'image/jpeg', 0.85);
-            }, 2000);
+                c.toBlob(blob => {
+                    if (blob && socket.readyState === WebSocket.OPEN) socket.send(blob);
+                    requestAnimationFrame(loop);
+                }, 'image/jpeg', 0.6);
+            };
+            socket.onopen = loop;
+            socket.onclose = () => { setStatus('Detection stopped', false); isSending = false; };
         }
 
         function stopRealtime() {
-            if (!rtInt) return;
-            clearInterval(rtInt); rtInt = null;
-            setStatus('Detection stopped', false);
+            if (socket) socket.close();
+            socket = null;
         }
 
         function onFile(el) {
@@ -1281,12 +1287,10 @@
 
         function analyze() {
             const f = document.getElementById('fileInput').files[0];
-            const k = document.getElementById('apiKey').value;
             if (!f) { setStatus('Select an image first', false); return; }
             setStatus('Analyzing…', true);
             const fd = new FormData(); fd.append('image', f);
-            if (k) fd.append('api_key', k);
-            fetch('/analyze', { method: 'POST', body: fd })
+            fetch('/predict', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(d => {
                     if (d.total !== undefined) setStats(d.total, d.occupied, d.available);
