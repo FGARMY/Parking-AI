@@ -980,59 +980,59 @@
                 </div>
             </div>
 
-            <!-- CAMERA (full width) -->
-            <div class="panel">
-                <div class="ph">
-                    <div class="ph-title">
-                        <span class="ph-icon">📷</span>
-                        Camera Feed
-                    </div>
-                    <div style="display:flex;gap:6px;">
-                        <button class="btn ghost" onclick="startLive()" style="height:28px;font-size:11px;">Server
-                            stream</button>
-                        <button class="btn pri" onclick="startCamera()" style="height:28px;font-size:11px;">Open
-                            camera</button>
-                    </div>
-                </div>
-                <div class="pb">
-                    <div class="vframe">
-                        <video id="video" autoplay playsinline muted style="display:none;"></video>
-                        <img id="liveFeed" class="lf" style="display:none;" />
-                        <div class="v-badges">
-                            <span class="vbadge vrec" id="recBadge" style="display:none;">● REC</span>
-                            <span class="vbadge" id="resBadge" style="display:none;">Live</span>
-                        </div>
-                        <div class="v-idle" id="vIdle">
-                            <div class="v-idle-icon">▷</div>
-                            <div class="v-idle-text">Camera inactive<br><span style="font-size:9.5px;opacity:0.6;">Click
-                                    "Open camera" or "Server stream"</span></div>
-                        </div>
-                    </div>
-
-                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-                        <div class="btn-row">
-                            <button class="btn pri" onclick="startRealtime()">
-                                <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor">
-                                    <circle cx="4.5" cy="4.5" r="4.5" />
-                                </svg>
-                                Start detection
-                            </button>
-                            <button class="btn danger" onclick="stopRealtime()">Stop</button>
-                            <button class="btn" onclick="stopCamera()">Disconnect</button>
-                        </div>
-                        <div class="status" id="statusEl">
-                            <span class="sd"></span>
-                            <span id="statusTxt">Idle</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- BOTTOM GRID -->
             <div class="grid-2">
 
                 <!-- LEFT COL -->
                 <div class="col">
+
+                    <!-- CAMERA -->
+                    <div class="panel">
+                        <div class="ph">
+                            <div class="ph-title">
+                                <span class="ph-icon">📷</span>
+                                Camera Feed
+                            </div>
+                            <div style="display:flex;gap:6px;">
+                                <button class="btn ghost" onclick="startLive()" style="height:28px;font-size:11px;">Server
+                                    stream</button>
+                                <button class="btn pri" onclick="startCamera()" style="height:28px;font-size:11px;">Open
+                                    camera</button>
+                            </div>
+                        </div>
+                        <div class="pb">
+                            <div class="vframe">
+                                <video id="video" autoplay playsinline muted style="display:none;"></video>
+                                <img id="liveFeed" class="lf" style="display:none;" />
+                                <div class="v-badges">
+                                    <span class="vbadge vrec" id="recBadge" style="display:none;">● REC</span>
+                                    <span class="vbadge" id="resBadge" style="display:none;">Live</span>
+                                </div>
+                                <div class="v-idle" id="vIdle">
+                                    <div class="v-idle-icon">▷</div>
+                                    <div class="v-idle-text">Camera inactive<br><span style="font-size:9.5px;opacity:0.6;">Click
+                                            "Open camera" or "Server stream"</span></div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                                <div class="btn-row">
+                                    <button class="btn pri" onclick="startRealtime()">
+                                        <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor">
+                                            <circle cx="4.5" cy="4.5" r="4.5" />
+                                        </svg>
+                                        Start detection
+                                    </button>
+                                    <button class="btn danger" onclick="stopRealtime()">Stop</button>
+                                    <button class="btn" onclick="stopCamera()">Disconnect</button>
+                                </div>
+                                <div class="status" id="statusEl">
+                                    <span class="sd"></span>
+                                    <span id="statusTxt">Idle</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Upload -->
                     <div class="panel">
