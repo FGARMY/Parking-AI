@@ -10,12 +10,26 @@ let isSending = false;
    INITIALIZATION
 ================================ */
 window.onload = () => {
+    // Prime ngrok connection to skip browser warning
+    primeNgrok();
+
     // Basic clock tick moved from inline script
     setInterval(() => {
         const el = document.getElementById('clock');
         if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }, 1000);
 };
+
+async function primeNgrok() {
+    try {
+        await fetch(BASE_URL + "/health", {
+            headers: { "ngrok-skip-browser-warning": "69420" }
+        });
+        console.log("Ngrok primed.");
+    } catch (e) {
+        console.error("Ngrok priming failed:", e);
+    }
+}
 
 /* ===============================
    IMAGE ANALYSIS
@@ -37,7 +51,8 @@ async function analyze() {
     try {
         const res = await fetch(API_URL, {
             method: "POST",
-            body: formData
+            body: formData,
+            headers: { "ngrok-skip-browser-warning": "69420" }
         });
 
         if (!res.ok) throw new Error("Server error: " + res.status);
