@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Parking AI Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>🚗 Parking AI Dashboard</h1>
+
+        <!-- LIVE CAMERA SECTION -->
+        <div class="card">
+            <h3>Live Camera</h3>
+
+            <!-- Server Live -->
+            <button onclick="startLive()">Server Live</button>
+            <img id="liveFeed" style="width:100%; margin-top:10px; border-radius:10px;" />
+
+            <hr style="margin: 15px 0;">
+
+            <!-- Browser Camera -->
+            <h4>Browser Camera (Production AI)</h4>
+
+            <video id="video" autoplay playsinline muted style="width:100%; border-radius:10px;"></video>
+
+            <canvas id="canvas" style="display:none;"></canvas>
+
+            <div style="margin-top:10px;">
+                <button onclick="startCamera()">Start Camera</button>
+                <button onclick="startRealtime()">Realtime Detection</button>
+                <button onclick="stopRealtime()">Stop Realtime</button>
+                <button onclick="stopCamera()">Stop Camera</button>
+            </div>
+
+            <p id="status" style="margin-top:10px; color:gray;">Idle</p>
+        </div>
+
+        <!-- API KEY -->
+        <div class="card">
+            <h3>Your API Key</h3>
+            <input type="text" id="apiKey" placeholder="Paste your API key here">
+        </div>
+
+        <!-- IMAGE UPLOAD -->
+        <div class="card">
+            <h3>Upload Parking Image</h3>
+            <input type="file" id="fileInput" accept="image/*">
+            <button onclick="analyze()">Analyze</button>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats">
+            <div class="stat">
+                <h2 id="total">0</h2>
+                <p>Total Slots</p>
+            </div>
+
+            <div class="stat red">
+                <h2 id="occupied">0</h2>
+                <p>Occupied</p>
+            </div>
+
+            <div class="stat green">
+                <h2 id="available">0</h2>
+                <p>Available</p>
+            </div>
+        </div>
+
+        <!-- OUTPUT IMAGE -->
+        <div class="card">
+            <h3>Processed Image</h3>
+            <img id="outputImage" style="width:100%; border-radius:10px;" />
+        </div>
+
+    </div>
+
+    <script src="dashboard.js"></script>
+
+</body>
+
+</html>
