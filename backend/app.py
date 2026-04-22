@@ -41,23 +41,16 @@ app.add_middleware(
 )
 
 # ── Serve frontend static files ───────────────────────────────────────
-FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
-
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 
 @app.get("/")
 def serve_dashboard():
     """Serve the main dashboard HTML."""
+    if not (FRONTEND_DIR / "index.html").exists():
+        return {"error": "Frontend build not found. Run npm run build in frontend directory."}
     return FileResponse(FRONTEND_DIR / "index.html")
 
-
-@app.get("/dashboard.js")
-def serve_dashboard_js():
-    """Serve the dashboard JavaScript."""
-    return FileResponse(FRONTEND_DIR / "dashboard.js", media_type="application/javascript")
-
-
-# Mount static files for any other assets (images, CSS, etc.)
-app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+# Mount static files (moved to bottom of file)
 
 
 # ❤️ Health check
@@ -68,7 +61,7 @@ def health():
 
 # ── 📤 IMAGE PREDICTION ──────────────────────────────────────────────
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(file: UploadFile = File(...), draw_boxes: bool = True):
     try:
         file_path = f"temp_{file.filename}"
 
@@ -78,7 +71,7 @@ async def predict(file: UploadFile = File(...)):
         img = cv2.imread(file_path)
         model = get_model()
 
-        img, detections, occupied, available = process_frame(img, model)
+        img, detections, occupied, available = process_frame(img, model, draw_boxes=draw_boxes)
 
         _, buffer = cv2.imencode(".jpg", img)
         img_base64 = base64.b64encode(buffer).decode()
@@ -103,7 +96,7 @@ def load_model():
 
 
 # ── 📹 LOCAL CAMERA STREAM (MJPEG) ───────────────────────────────────
-def generate_frames():
+def generate_frames(draw_boxes=True):
     """Yield MJPEG frames from the PC's webcam with AI overlay."""
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -118,7 +111,7 @@ def generate_frames():
             break
 
         frame = cv2.resize(frame, (640, 480))
-        frame, _, _, _ = process_frame(frame, model)
+        frame, _, _, _ = process_frame(frame, model, draw_boxes=draw_boxes)
 
         _, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
         frame_bytes = buffer.tobytes()
@@ -132,9 +125,9 @@ def generate_frames():
 
 
 @app.get("/live")
-def live_stream():
+def live_stream(draw_boxes: bool = True):
     return StreamingResponse(
-        generate_frames(),
+        generate_frames(draw_boxes),
         media_type="multipart/x-mixed-replace; boundary=frame",
     )
 
@@ -146,12 +139,26 @@ async def websocket_endpoint(websocket: WebSocket):
     model = get_model()
     print("[WS] Client connected")
 
+    draw_boxes = True
     try:
         while True:
-            # Receive JPEG blob from the phone's camera
-            data = await websocket.receive_bytes()
-
-            nparr = np.frombuffer(data, np.uint8)
+            # Receive message (can be text/JSON config or binary JPEG frame)
+            data = await websocket.receive()
+            
+            if "text" in data:
+                try:
+                    import json
+                    msg = json.loads(data["text"])
+                    if "draw_boxes" in msg:
+                        draw_boxes = bool(msg["draw_boxes"])
+                except Exception:
+                    pass
+                continue
+                
+            if "bytes" not in data:
+                continue
+                
+            nparr = np.frombuffer(data["bytes"], np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
             if frame is None:
@@ -162,7 +169,7 @@ async def websocket_endpoint(websocket: WebSocket):
             frame = cv2.resize(frame, (640, 480))
 
             # Run AI detection
-            frame, detections, occupied, available = process_frame(frame, model)
+            frame, detections, occupied, available = process_frame(frame, model, draw_boxes=draw_boxes)
 
             # Encode annotated frame
             _, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
@@ -174,6 +181,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "occupied": occupied,
                 "available": available,
                 "image": encoded,
+                "detections": detections,
             })
 
     except Exception as e:
@@ -184,6 +192,10 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.close()
         except Exception:
             pass
+
+
+# Mount static files for any other assets (images, CSS, JS, etc.)
+app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="static")
 
 
 # ── Run with: python app.py ───────────────────────────────────────────

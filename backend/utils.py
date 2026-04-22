@@ -13,7 +13,7 @@ OCCUPIED_CLASSES = {"occupied", "car", "vehicle"}
 AVAILABLE_CLASSES = {"empty", "available", "free", "space"}
 
 
-def process_frame(img, model, confidence=0.5):
+def process_frame(img, model, confidence=0.5, draw_boxes=True):
     """
     Run inference on a frame and annotate it.
 
@@ -21,6 +21,7 @@ def process_frame(img, model, confidence=0.5):
         img: numpy BGR image (from OpenCV)
         model: Roboflow inference model instance
         confidence: minimum detection confidence
+        draw_boxes: whether to draw bounding boxes on the image
 
     Returns:
         (annotated_img, detections_list, occupied_count, available_count)
@@ -58,16 +59,17 @@ def process_frame(img, model, confidence=0.5):
             color = (0, 165, 255)     # Orange
 
         # Draw bounding box
-        cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(
-            img,
-            f"{label} {conf:.0%}",
-            (x1, y1 - 8),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            color,
-            2,
-        )
+        if draw_boxes:
+            cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(
+                img,
+                f"{label} {conf:.0%}",
+                (x1, y1 - 8),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                color,
+                2,
+            )
 
         detections.append({
             "label": label,
