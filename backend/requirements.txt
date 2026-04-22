@@ -1,7 +1,9 @@
 fastapi
 uvicorn
-ultralytics
+inference
+inference-sdk
+supervision
 opencv-python-headless
 python-multipart
-huggingface_hub
-sqlalchemy
+python-dotenv
+numpy

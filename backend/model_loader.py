@@ -1,28 +1,39 @@
-from ultralytics import YOLO
-from huggingface_hub import hf_hub_download
-import os
+"""
+Model Loader — Roboflow Inference SDK (Local)
+==============================================
+Loads the parking detection model using Roboflow's
+local inference engine. No frames leave your machine.
+"""
 
-model = None
+import os
+from inference import get_model as rf_get_model
+
+_model = None
+
 
 def get_model():
-    global model
+    """
+    Lazily load and cache the Roboflow model.
+    Uses ROBOFLOW_API_KEY and MODEL_ID from environment.
+    """
+    global _model
 
-    if model is None:
-        try:
-            print("Downloading model from Hugging Face...")
+    if _model is None:
+        api_key = os.getenv("ROBOFLOW_API_KEY")
+        model_id = os.getenv("MODEL_ID", "real-time-car-parking/4")
 
-            model_path = hf_hub_download(
-                repo_id="FGArmy/Parking_AI",
-                filename="best.pt",
-                token=os.getenv("HF_TOKEN")  # optional if private
+        if not api_key:
+            raise RuntimeError(
+                "ROBOFLOW_API_KEY is not set. "
+                "Add it to backend/.env or set it as an environment variable."
             )
 
-            print("Model downloaded at:", model_path)
-
-            model = YOLO(model_path)
-
+        try:
+            print(f"[INFO] Loading Roboflow model '{model_id}' …")
+            _model = rf_get_model(model_id=model_id)
+            print("[INFO] Model loaded successfully.")
         except Exception as e:
-            print("❌ Model download failed:", e)
-            raise RuntimeError(f"Model loading failed: {str(e)}")
+            print(f"[ERROR] Model loading failed: {e}")
+            raise RuntimeError(f"Model loading failed: {e}")
 
-    return model
+    return _model

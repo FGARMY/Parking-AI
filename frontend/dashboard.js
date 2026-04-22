@@ -1,6 +1,9 @@
-const BASE_URL = "http://127.0.0.1:8001";
+// Dynamic hostname — works on PC (localhost) AND phone (192.168.x.x)
+const _host = window.location.hostname || "127.0.0.1";
+const _port = "8001";
+const BASE_URL = `http://${_host}:${_port}`;
 const API_URL = BASE_URL + "/predict";
-const WS_URL = BASE_URL.replace("http", "ws") + "/ws";
+const WS_URL = `ws://${_host}:${_port}/ws`;
 
 let videoStream = null;
 let socket = null;
