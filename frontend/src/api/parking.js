@@ -1,8 +1,12 @@
 export const getBaseUrl = () => {
+  // 1. Priority: Environment variable (for Vercel/Production)
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) return envUrl.replace(/\/$/, "");
+
+  // 2. Fallback: Dynamic detection
   const { protocol, hostname, port } = window.location;
   const apiPort = port || "8001";
   
-  // If we are on a production-like environment (no port in URL), use the host as is
   if (!port && hostname !== "localhost" && hostname !== "127.0.0.1") {
     return `${protocol}//${hostname}`;
   }
@@ -11,15 +15,9 @@ export const getBaseUrl = () => {
 };
 
 export const getWsUrl = () => {
-  const { protocol, hostname, port } = window.location;
-  const wsProtocol = protocol === "https:" ? "wss:" : "ws:";
-  const apiPort = port || "8001";
-
-  if (!port && hostname !== "localhost" && hostname !== "127.0.0.1") {
-    return `${wsProtocol}//${hostname}/ws`;
-  }
-
-  return `${wsProtocol}//${hostname}:${apiPort}/ws`;
+  const baseUrl = getBaseUrl();
+  const wsUrl = baseUrl.replace(/^http/, "ws");
+  return `${wsUrl}/ws`;
 };
 
 export const getLiveStreamUrl = (drawBoxes = true) => {
