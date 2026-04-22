@@ -1,13 +1,25 @@
 export const getBaseUrl = () => {
-  const host = window.location.hostname || "127.0.0.1";
-  const port = "8001";
-  return `http://${host}:${port}`;
+  const { protocol, hostname, port } = window.location;
+  const apiPort = port || "8001";
+  
+  // If we are on a production-like environment (no port in URL), use the host as is
+  if (!port && hostname !== "localhost" && hostname !== "127.0.0.1") {
+    return `${protocol}//${hostname}`;
+  }
+  
+  return `${protocol}//${hostname}:${apiPort}`;
 };
 
 export const getWsUrl = () => {
-  const host = window.location.hostname || "127.0.0.1";
-  const port = "8001";
-  return `ws://${host}:${port}/ws`;
+  const { protocol, hostname, port } = window.location;
+  const wsProtocol = protocol === "https:" ? "wss:" : "ws:";
+  const apiPort = port || "8001";
+
+  if (!port && hostname !== "localhost" && hostname !== "127.0.0.1") {
+    return `${wsProtocol}//${hostname}/ws`;
+  }
+
+  return `${wsProtocol}//${hostname}:${apiPort}/ws`;
 };
 
 export const getLiveStreamUrl = (drawBoxes = true) => {
