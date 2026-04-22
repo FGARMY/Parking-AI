@@ -17,7 +17,7 @@ export default function VideoFeed({ videoRef, isLive, outputImage, isLoading }) 
         autoPlay 
         playsInline 
         muted 
-        className={`w-full h-full object-cover ${(!outputImage && isLive) ? 'block' : 'hidden'}`}
+        className={`w-full h-full object-cover ${(!outputImage && isLive) ? 'block' : 'opacity-0 absolute -z-10 pointer-events-none'}`}
       />
 
       {/* Display processed image from AI server */}

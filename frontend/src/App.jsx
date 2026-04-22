@@ -107,11 +107,13 @@ function App() {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(err => console.error("Auto-play failed:", err));
       }
       setIsLive(true);
       setOutputImage(null);
       setDetections([]);
-      setStatus('idle');
+      setStatus('processing');
+      connect(); // Automatically start detection
     } catch (e) {
       console.error(e);
       setStatus('error');
