@@ -5,8 +5,14 @@ export const getBaseUrl = () => {
 
   // 2. Fallback: Dynamic detection
   const { protocol, hostname, port } = window.location;
-  const apiPort = port || "8001";
   
+  // If we are on Vite's default dev port, the backend is likely on 8001
+  let apiPort = port;
+  if (port === "5173" || !port) {
+    apiPort = "8001";
+  }
+
+  // Handle production (hostname without port)
   if (!port && hostname !== "localhost" && hostname !== "127.0.0.1") {
     return `${protocol}//${hostname}`;
   }
